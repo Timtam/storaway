@@ -1,5 +1,6 @@
+import pathlib
 import textwrap
-from typing import TYPE_CHECKING, List, Type
+from typing import TYPE_CHECKING, BinaryIO, List, Optional, Type
 
 import click
 
@@ -18,7 +19,8 @@ if TYPE_CHECKING:
 @click.argument(
     "application",
 )
-def BackupCommand(application: str) -> None:
+@click.option("-o", "--output", type=click.File("wb"), help="output file", default=None)
+def BackupCommand(application: str, output: Optional[BinaryIO]) -> None:
 
     found_apps: List[Type["Application"]] = list(
         filter(lambda app: app.name.lower() == application.lower(), applications)
@@ -38,3 +40,11 @@ def BackupCommand(application: str) -> None:
     if not get_current_platform() in app.platforms:
         click.echo(f"Storaway doesn't support {app.name} on this platform yet.")
         return
+
+    if not output:
+        with (pathlib.Path("./").resolve() / app.get_backup_file_name()).open(
+            "wb"
+        ) as output:
+            app.backup(output)
+    else:
+        app.backup(output)
