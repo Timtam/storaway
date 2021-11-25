@@ -2,7 +2,7 @@ import shutil
 import tempfile
 import zipfile
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, BinaryIO, Sequence, Tuple, Type, TypeVar
+from typing import IO, TYPE_CHECKING, Any, Sequence, Tuple, Type, TypeVar
 
 import click
 
@@ -20,13 +20,13 @@ class Application:
     description: str
     platforms: Tuple["Platform", ...]
 
-    def prepare_collectors(self) -> Sequence[Type[Collector]]:
+    def prepare_collectors(self) -> Sequence[Collector]:
         return []
 
-    def echo(self, message, err=False) -> None:
+    def echo(self, message: str, err: bool = False) -> None:
         click.echo(message=f"[{self.name}] {message}", err=err)
 
-    def backup(self, output: BinaryIO) -> None:
+    def backup(self, output: IO[bytes]) -> None:
 
         self.echo("Starting backup")
 
@@ -58,5 +58,9 @@ class Application:
     def get_backup_file_name(self) -> str:
         return datetime.now().strftime("%Y-%m-%d %H-%M-%S") + f"_{self.name}.stor"
 
-    def get_collector(self, collector: T, *args: Any, **kwargs: Any) -> T:
-        return collector(*args, **kwargs, application=self)
+    def get_collector(self, collector: Type[T], *args: Any, **kwargs: Any) -> T:
+        c = collector(*args, **kwargs)
+
+        c.application = self
+
+        return c

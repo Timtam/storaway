@@ -1,25 +1,22 @@
 import pathlib
 import zipfile
-from typing import TYPE_CHECKING, BinaryIO, List
+from typing import IO, List
 
 import click
 
-from collectors.collector import Collector
-
-if TYPE_CHECKING:
-    from applications.application import Application
+from .collector import Collector
 
 
 class FileCollector(Collector):
 
     path: pathlib.Path
 
-    def __init__(self, path: pathlib.Path, application: "Application") -> None:
-        super().__init__(application=application)
+    def __init__(self, path: pathlib.Path) -> None:
+        super().__init__()
 
         self.path = path
 
-    def collect(self, output: BinaryIO) -> None:
+    def collect(self, output: IO[bytes]) -> None:
 
         files: List[pathlib.Path] = []
 

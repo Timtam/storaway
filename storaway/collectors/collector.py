@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, BinaryIO, Type
+from typing import IO, TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from applications.application import Application
@@ -7,11 +7,11 @@ if TYPE_CHECKING:
 
 class Collector:
 
-    application: Type["Application"]
+    application: "Application"
 
-    def __init__(self, application: Type["Application"]) -> None:
-        self.application = application
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        pass
 
     @abstractmethod
-    def collect(self, output: BinaryIO) -> None:
+    def collect(self, output: IO[bytes]) -> None:
         pass
