@@ -44,7 +44,7 @@ class FileCollector(Collector):
                 try:
                     zip.write(file, file.relative_to(self.path))
                 except PermissionError:
-                    self.application.echo(
+                    self.application.report_warning(
                         f"Encountered a permission error while reading file {click.format_filename(file)}"
                     )
 
