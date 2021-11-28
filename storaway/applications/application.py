@@ -1,11 +1,14 @@
+import pickle
 import shutil
 import tempfile
 import zipfile
+from dataclasses import dataclass
 from datetime import datetime
 from typing import IO, TYPE_CHECKING, Any, List, Sequence, Tuple, Type, TypeVar, final
 
 import click
 
+from __version__ import version
 from collectors.collector import Collector
 from utils.exceptions import WarningException
 from utils.warnings import Warnings
@@ -14,6 +17,11 @@ if TYPE_CHECKING:
     from utils.platform import Platform
 
 T = TypeVar("T", bound=Collector)
+
+
+@dataclass(init=False)
+class ApplicationMetadata:
+    storaway_version: str
 
 
 class Application:
@@ -64,6 +72,13 @@ class Application:
                 self.echo(f"Finished step {i + 1}/{len(collectors)}")
 
                 self.show_warnings()
+
+            meta = ApplicationMetadata()
+
+            meta.storaway_version = version
+
+            with zip.open("metadata", "w") as file:
+                file.write(pickle.dumps(meta, pickle.HIGHEST_PROTOCOL))
 
         except WarningException as exc:
 
