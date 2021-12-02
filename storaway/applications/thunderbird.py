@@ -14,4 +14,6 @@ class Thunderbird(Application):
     platforms = (Platform.WINDOWS,)
 
     def prepare_collectors(self) -> Sequence[FileCollector]:
-        return [self.get_collector(FileCollector, get_appdata() / "Thunderbird")]
+        return [
+            self.get_collector(FileCollector, "files", get_appdata() / "Thunderbird")
+        ]

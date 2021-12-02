@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 class Collector:
 
     application: "Application"
+    name: str
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         pass

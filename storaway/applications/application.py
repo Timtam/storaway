@@ -4,23 +4,23 @@ import tempfile
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime
-from typing import IO, TYPE_CHECKING, Any, List, Sequence, Tuple, Type, TypeVar, final
+from typing import IO, Any, Dict, List, Sequence, Tuple, Type, TypeVar, final
 
 import click
 
 from __version__ import version
 from collectors.collector import Collector
 from utils.exceptions import WarningException
+from utils.platform import Platform, get_current_platform
 from utils.warnings import Warnings
-
-if TYPE_CHECKING:
-    from utils.platform import Platform
 
 T = TypeVar("T", bound=Collector)
 
 
 @dataclass(init=False)
 class ApplicationMetadata:
+    collectors_map: Dict[str, int]
+    platform: Platform
     storaway_version: str
 
 
@@ -28,7 +28,7 @@ class Application:
 
     name: str
     description: str
-    platforms: Tuple["Platform", ...]
+    platforms: Tuple[Platform, ...]
 
     _warnings: List[str]
     _warnings_level: Warnings = Warnings.IGNORE
@@ -54,6 +54,12 @@ class Application:
 
         try:
 
+            meta = ApplicationMetadata()
+
+            meta.storaway_version = version
+            meta.platform = get_current_platform()
+            meta.collectors_map = {}
+
             for i, collector in enumerate(collectors):
 
                 self.echo(f"Step {i + 1}/{len(collectors)}: Starting...")
@@ -69,13 +75,11 @@ class Application:
 
                 target_file.close()
 
+                meta.collectors_map[collector.name] = i
+
                 self.echo(f"Finished step {i + 1}/{len(collectors)}")
 
                 self.show_warnings()
-
-            meta = ApplicationMetadata()
-
-            meta.storaway_version = version
 
             with zip.open("metadata", "w") as file:
                 file.write(pickle.dumps(meta, pickle.HIGHEST_PROTOCOL))
@@ -95,10 +99,13 @@ class Application:
         return datetime.now().strftime("%Y-%m-%d %H-%M-%S") + f"_{self.name}.stor"
 
     @final
-    def get_collector(self, collector: Type[T], *args: Any, **kwargs: Any) -> T:
+    def get_collector(
+        self, collector: Type[T], name: str, *args: Any, **kwargs: Any
+    ) -> T:
         c = collector(*args, **kwargs)
 
         c.application = self
+        c.name = name
 
         return c
 
