@@ -56,3 +56,5 @@ def RestoreCommand(
         return
 
     app.set_warnings_level(Warnings(warnings))
+
+    app.restore(file)

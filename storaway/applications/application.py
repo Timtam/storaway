@@ -10,11 +10,13 @@ import click
 
 from __version__ import version
 from collectors.collector import Collector
+from extractors.extractor import Extractor
 from utils.exceptions import WarningException
 from utils.platform import Platform, get_current_platform
 from utils.warnings import Warnings
 
 T = TypeVar("T", bound=Collector)
+U = TypeVar("U", bound=Extractor)
 
 
 @dataclass(init=False)
@@ -37,6 +39,11 @@ class Application:
         self._warnings = []
 
     def prepare_collectors(self) -> Sequence[Collector]:
+        return []
+
+    def prepare_extractors(
+        self, collectors: Dict[str, IO[bytes]]
+    ) -> Sequence[Extractor]:
         return []
 
     @final
@@ -110,6 +117,17 @@ class Application:
         return c
 
     @final
+    def get_extractor(
+        self, extractor: Type[U], input: IO[bytes], *args: Any, **kwargs: Any
+    ) -> U:
+        e = extractor(*args, **kwargs)
+
+        e.application = self
+        e.input = input
+
+        return e
+
+    @final
     def report_warning(self, message: str) -> None:
         if self._warnings_level == Warnings.ERROR:
             raise WarningException(message)
@@ -132,3 +150,50 @@ class Application:
     @final
     def set_warnings_level(self, level: Warnings) -> None:
         self._warnings_level = level
+
+    @final
+    def restore(self, input: IO[bytes]) -> None:
+
+        self.echo("Restoring backup")
+
+        if not zipfile.is_zipfile(input):
+            self.echo("Error while opening backup file: invalid file format", err=True)
+            return
+
+        zip = zipfile.ZipFile(input, "r", allowZip64=True)
+
+        meta: ApplicationMetadata = pickle.loads(zip.read("metadata"))
+
+        files: Dict[str, IO[bytes]] = {}
+
+        for name, index in meta.collectors_map.items():
+            files[name] = zip.open(f"{index}", "r")
+
+        try:
+
+            extractors = self.prepare_extractors(files)
+
+            for i, extractor in enumerate(extractors):
+
+                self.echo(f"Step {i + 1}/{len(extractors)}: Starting...")
+
+                extractor.extract()
+
+                self.echo(f"Finished step {i + 1}/{len(extractors)}")
+
+                self.show_warnings()
+
+        except WarningException as exc:
+
+            self.echo(
+                f"The restoration was aborted due to the following error: {str(exc)}"
+            )
+
+        finally:
+
+            for name, file in files.items():
+                file.close()
+
+            zip.close()
+
+        self.echo("Finished restoration")
