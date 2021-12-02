@@ -2,6 +2,7 @@ import click
 
 from commands.backup_command import BackupCommand
 from commands.list_command import ListCommand
+from commands.restore_command import RestoreCommand
 
 
 @click.group(
@@ -13,6 +14,7 @@ def main() -> None:
 
 main.add_command(BackupCommand)
 main.add_command(ListCommand)
+main.add_command(RestoreCommand)
 
 if __name__ == "__main__":
     main()
