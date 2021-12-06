@@ -3,7 +3,6 @@ import shutil
 import tempfile
 import textwrap
 import zipfile
-from dataclasses import dataclass
 from datetime import datetime
 from typing import IO, Any, Dict, List, Sequence, Tuple, Type, TypeVar, final
 
@@ -12,19 +11,13 @@ import click
 from __version__ import version
 from collectors.collector import Collector
 from extractors.extractor import Extractor
+from utils.application_metadata import ApplicationMetadata
 from utils.exceptions import WarningException
 from utils.platform import Platform, get_current_platform
 from utils.warnings import Warnings
 
 T = TypeVar("T", bound=Collector)
 U = TypeVar("U", bound=Extractor)
-
-
-@dataclass(init=False)
-class ApplicationMetadata:
-    collectors_map: Dict[str, int]
-    platform: Platform
-    storaway_version: str
 
 
 class Application:
