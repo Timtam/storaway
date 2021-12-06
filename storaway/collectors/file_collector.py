@@ -31,6 +31,12 @@ class FileCollector(Collector):
                 elif file.is_dir():
                     aggregate_files(file)
 
+        if not self.path.exists():
+            self.application.report_warning(
+                f"File or directory doesn't exist: {self.path}", critical=True
+            )
+            return
+
         self.application.echo("Searching for files...")
 
         aggregate_files(self.path)
