@@ -30,10 +30,18 @@ if TYPE_CHECKING:
     default="ignore",
     help="what should be done with warnings. Ignore (default) means that warnings are shown, but will not interfere with the backup process. Ask will show an interactive question, allowing you to interactively abort the process. Error will abort the backup process as soon as a warning is encountered.",
 )
+@click.option(
+    "-o",
+    "--overwrite",
+    is_flag=True,
+    default=False,
+    help="apply the restoration even if data already exists",
+)
 def RestoreCommand(
     application: str,
     file: IO[bytes],
     warnings: Union[Literal["ignore"], Literal["ask"], Literal["error"]],
+    overwrite: bool,
 ) -> None:
 
     found_apps: List[Type["Application"]] = list(
@@ -56,5 +64,6 @@ def RestoreCommand(
         return
 
     app.set_warnings_level(Warnings(warnings))
+    app.set_overwrite(overwrite)
 
     app.restore(file)

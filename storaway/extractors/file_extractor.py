@@ -17,6 +17,12 @@ class FileExtractor(Extractor):
 
     def extract(self) -> None:
 
+        if self.path.exists() and not self.application.get_overwrite():
+            self.application.report_warning(
+                f"The target path already exists: {self.path}", critical=True
+            )
+            return
+
         zip = zipfile.ZipFile(self.input, "r")
 
         self.application.echo("Searching for files...")

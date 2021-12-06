@@ -1,6 +1,7 @@
 import pickle
 import shutil
 import tempfile
+import textwrap
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime
@@ -32,11 +33,13 @@ class Application:
     description: str
     platforms: Tuple[Platform, ...]
 
+    _overwrite: bool
     _warnings: List[str]
     _warnings_level: Warnings = Warnings.IGNORE
 
     def __init__(self) -> None:
         self._warnings = []
+        self._overwrite = False
 
     def prepare_collectors(self) -> Sequence[Collector]:
         return []
@@ -93,7 +96,11 @@ class Application:
 
         except WarningException as exc:
 
-            self.echo(f"The backup was aborted due to the following error: {str(exc)}")
+            self.echo(
+                textwrap.fill(
+                    f"The backup was aborted due to the following error: {str(exc)}"
+                )
+            )
 
         finally:
 
@@ -128,8 +135,8 @@ class Application:
         return e
 
     @final
-    def report_warning(self, message: str) -> None:
-        if self._warnings_level == Warnings.ERROR:
+    def report_warning(self, message: str, critical: bool = False) -> None:
+        if self._warnings_level == Warnings.ERROR or critical:
             raise WarningException(message)
         elif self._warnings_level == Warnings.ASK:
             self.echo("The following warning occurred:")
@@ -144,7 +151,7 @@ class Application:
         if len(self._warnings) > 0:
             self.echo(f"The following {len(self._warnings)} warning(s) occurred:")
             for warning in self._warnings:
-                self.echo(f"\t{warning}")
+                self.echo(textwrap.fill(f"\t{warning}"))
             self._warnings.clear()
 
     @final
@@ -186,7 +193,9 @@ class Application:
         except WarningException as exc:
 
             self.echo(
-                f"The restoration was aborted due to the following error: {str(exc)}"
+                textwrap.fill(
+                    f"The restoration was aborted due to the following error: {str(exc)}"
+                )
             )
 
         finally:
@@ -197,3 +206,9 @@ class Application:
             zip.close()
 
         self.echo("Finished restoration")
+
+    def set_overwrite(self, overwrite: bool) -> None:
+        self._overwrite = overwrite
+
+    def get_overwrite(self) -> bool:
+        return self._overwrite
