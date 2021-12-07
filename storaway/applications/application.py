@@ -4,7 +4,7 @@ import tempfile
 import textwrap
 import zipfile
 from datetime import datetime
-from typing import IO, Any, Dict, List, Sequence, Tuple, Type, TypeVar, final
+from typing import IO, Any, Dict, Iterator, List, Tuple, Type, TypeVar, final
 
 import click
 
@@ -34,13 +34,13 @@ class Application:
         self._warnings = []
         self._overwrite = False
 
-    def prepare_collectors(self) -> Sequence[Collector]:
-        return []
+    def prepare_collectors(self) -> Iterator[Collector]:
+        yield from ()
 
     def prepare_extractors(
         self, collectors: Dict[str, IO[bytes]]
-    ) -> Sequence[Extractor]:
-        return []
+    ) -> Iterator[Extractor]:
+        yield from ()
 
     @final
     def echo(self, message: str, err: bool = False) -> None:
@@ -51,11 +51,11 @@ class Application:
 
         self.echo("Starting backup")
 
-        collectors = self.prepare_collectors()
-
         zip = zipfile.ZipFile(output, "w", allowZip64=True)
 
         try:
+
+            i: int = 0
 
             meta = ApplicationMetadata()
 
@@ -63,9 +63,9 @@ class Application:
             meta.platform = get_current_platform()
             meta.collectors_map = {}
 
-            for i, collector in enumerate(collectors):
+            for collector in self.prepare_collectors():
 
-                self.echo(f"Step {i + 1}/{len(collectors)}: Starting...")
+                self.echo(f"Step {i + 1}: Starting...")
 
                 target_file = tempfile.TemporaryFile()
 
@@ -80,7 +80,9 @@ class Application:
 
                 meta.collectors_map[collector.name] = i
 
-                self.echo(f"Finished step {i + 1}/{len(collectors)}")
+                self.echo(f"Finished step {i + 1}")
+
+                i += 1
 
                 self.show_warnings()
 
@@ -171,15 +173,15 @@ class Application:
 
         try:
 
-            extractors = self.prepare_extractors(files)
+            i = 0
 
-            for i, extractor in enumerate(extractors):
+            for extractor in self.prepare_extractors(files):
 
-                self.echo(f"Step {i + 1}/{len(extractors)}: Starting...")
+                self.echo(f"Step {i + 1}: Starting...")
 
                 extractor.extract()
 
-                self.echo(f"Finished step {i + 1}/{len(extractors)}")
+                self.echo(f"Finished step {i + 1}")
 
                 self.show_warnings()
 

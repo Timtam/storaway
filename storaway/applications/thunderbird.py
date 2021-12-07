@@ -1,4 +1,4 @@
-from typing import IO, Dict, Sequence
+from typing import IO, Dict, Iterator
 
 from collectors.file_collector import FileCollector
 from extractors.file_extractor import FileExtractor
@@ -14,17 +14,13 @@ class Thunderbird(Application):
     description = "Mozilla Thunderbird"
     platforms = (Platform.WINDOWS,)
 
-    def prepare_collectors(self) -> Sequence[FileCollector]:
-        return [
-            self.get_collector(FileCollector, "files", get_appdata() / "Thunderbird")
-        ]
+    def prepare_collectors(self) -> Iterator[FileCollector]:
+        yield self.get_collector(FileCollector, "files", get_appdata() / "Thunderbird")
 
     def prepare_extractors(
         self, files: Dict[str, IO[bytes]]
-    ) -> Sequence[FileExtractor]:
+    ) -> Iterator[FileExtractor]:
 
-        return [
-            self.get_extractor(
-                FileExtractor, files["files"], get_appdata() / "Thunderbird"
-            )
-        ]
+        yield self.get_extractor(
+            FileExtractor, files["files"], get_appdata() / "Thunderbird"
+        )
