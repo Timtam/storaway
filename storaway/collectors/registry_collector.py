@@ -56,8 +56,7 @@ class RegistryCollector(Collector):
 
                 value = RegistryValue()
 
-                value.key = self.key
-                value.sub_key = sub_key
+                value.sub_key = sub_key[len(self.sub_key) + 1 :]
                 value.name = value_info[0]
                 value.value = value_info[1]
                 value.type = value_info[2]
@@ -93,6 +92,8 @@ class RegistryCollector(Collector):
             filter=self.filter,
             access=winreg.KEY_READ | self.access,
         )
+
+        registry.Close()
 
         self.application.echo(f"Found {len(values)} values.")
 

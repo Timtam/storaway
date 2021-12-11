@@ -1,6 +1,6 @@
 import pathlib
 import zipfile
-from typing import Any, List
+from typing import List
 
 import click
 
@@ -11,7 +11,9 @@ class FileExtractor(Extractor):
 
     path: pathlib.Path
 
-    def __init__(self, path: pathlib.Path, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, path: pathlib.Path) -> None:
+
+        super().__init__()
 
         self.path = path
 

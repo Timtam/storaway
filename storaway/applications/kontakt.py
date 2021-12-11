@@ -1,11 +1,14 @@
 import os.path
 import pathlib
 import winreg
-from typing import Iterator, List, Sequence, cast
+from typing import IO, Dict, Iterator, List, Sequence, cast
 
 from collectors.collector import Collector
 from collectors.file_collector import FileCollector
 from collectors.registry_collector import RegistryCollector
+from extractors.extractor import Extractor
+from extractors.file_extractor import FileExtractor
+from extractors.registry_extractor import RegistryExtractor
 from utils.platform import Platform, is_64bit
 from utils.registry_value import RegistryValue
 
@@ -118,3 +121,78 @@ class Kontakt(Application):
             return values
 
         return []
+
+    def prepare_extractors(self, files: Dict[str, IO[bytes]]) -> Iterator[Extractor]:
+
+        yield self.get_extractor(
+            RegistryExtractor,
+            files["uninstall_32bit"],
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+            winreg.KEY_WOW64_32KEY,
+        )
+
+        yield self.get_extractor(
+            RegistryExtractor,
+            files["kontakt_machine_32bit"],
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SOFTWARE\Native Instruments",
+            winreg.KEY_WOW64_32KEY,
+        )
+
+        yield self.get_extractor(
+            RegistryExtractor,
+            files["kontakt_user_32bit"],
+            winreg.HKEY_CURRENT_USER,
+            r"SOFTWARE\Native Instruments",
+            winreg.KEY_WOW64_32KEY,
+        )
+
+        if is_64bit():
+
+            try:
+
+                yield self.get_extractor(
+                    RegistryExtractor,
+                    files["kontakt_machine_64bit"],
+                    winreg.HKEY_LOCAL_MACHINE,
+                    r"SOFTWARE\Native Instruments",
+                    winreg.KEY_WOW64_64KEY,
+                )
+
+            except KeyError:
+                pass
+
+            try:
+
+                yield self.get_extractor(
+                    RegistryExtractor,
+                    files["kontakt_user_64bit"],
+                    winreg.HKEY_CURRENT_USER,
+                    r"SOFTWARE\Native Instruments",
+                    winreg.KEY_WOW64_64KEY,
+                )
+
+            except KeyError:
+                pass
+
+        to_be_extracted: Dict[str, IO[bytes]] = {
+            name: files[name]
+            for name in files
+            if name
+            not in (
+                "uninstall_32bit",
+                "kontakt_machine_32bit",
+                "kontakt_machine_64bit",
+                "kontakt_user_32bit",
+                "kontakt_user_64bit",
+            )
+        }
+
+        for name, file in to_be_extracted.items():
+
+            yield self.get_extractor(
+                FileExtractor,
+                file,
+                pathlib.Path(name),
+            )
